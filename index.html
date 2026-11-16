@@ -1,0 +1,709 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Minhas Receitas</title>
+<meta name="theme-color" content="#2c7a58">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Receitas">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=DM+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: uma coluna estreita, cabeçalho fixo, lista de cartões e botão de ação no canto. */
+:root {
+  --bg: #f6f7f4;
+  --surface: #ffffff;
+  --ink: #1c2420;
+  --muted: #5d6a63;
+  --line: #dfe4de;
+  --accent: #2c7a58;
+  --accent-ink: #ffffff;
+  --accent-soft: #e0efe7;
+  --warn: #b3422f;
+  --warn-soft: #f8e4df;
+  --font-display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --font-body: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #101512;
+    --surface: #18201b;
+    --ink: #e8eee9;
+    --muted: #9aa89f;
+    --line: #2a352e;
+    --accent: #58b88a;
+    --accent-ink: #0d1a13;
+    --accent-soft: #1c3328;
+    --warn: #e58a77;
+    --warn-soft: #3a1f19;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+button, input, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+h1, h2, h3 { font-family: var(--font-display); line-height: 1.15; margin: 0; text-wrap: balance; }
+
+.top {
+  position: sticky; top: 0; z-index: 5;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+  padding: calc(env(safe-area-inset-top, 0px) + 10px) 16px 10px;
+}
+.top-in { max-width: 640px; margin: 0 auto; display: flex; align-items: center; gap: 8px; min-height: 44px; }
+.top h1 { font-size: 22px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.icon-btn {
+  width: 44px; height: 44px; border-radius: 12px; border: 0; background: transparent;
+  display: grid; place-items: center; flex: none;
+}
+.icon-btn:active { background: var(--accent-soft); }
+.icon-btn svg { width: 24px; height: 24px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+main { max-width: 640px; margin: 0 auto; padding: 16px 16px calc(env(safe-area-inset-bottom, 0px) + 110px); }
+
+.search {
+  width: 100%; min-height: 48px; padding: 10px 14px; border-radius: 12px;
+  border: 1px solid var(--line); background: var(--surface);
+}
+.chips { display: flex; gap: 8px; overflow-x: auto; padding: 12px 0 4px; scrollbar-width: none; }
+.chips::-webkit-scrollbar { display: none; }
+.chip {
+  flex: none; min-height: 36px; padding: 4px 14px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink); font-size: 14px;
+}
+.chip[aria-pressed="true"], .chip.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.chip.ghost { border-style: dashed; color: var(--muted); }
+.tag {
+  display: inline-block; padding: 1px 10px; border-radius: 999px; font-size: 13px;
+  background: var(--accent-soft); color: var(--ink);
+}
+.tags { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.list { display: grid; gap: 12px; margin-top: 14px; padding: 0; list-style: none; }
+.card {
+  display: block; width: 100%; text-align: left; text-decoration: none; color: inherit;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px;
+}
+.card:active { background: var(--accent-soft); }
+.card h2 { font-size: 19px; margin-bottom: 6px; }
+.meta { color: var(--muted); font-size: 14px; margin-top: 8px; }
+
+.empty { text-align: center; color: var(--muted); padding: 48px 12px; }
+.empty h2 { color: var(--ink); font-size: 20px; margin-bottom: 8px; }
+
+.fab {
+  position: fixed; right: max(16px, env(safe-area-inset-right, 0px));
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
+  min-height: 52px; padding: 0 20px; border: 0; border-radius: 26px;
+  background: var(--accent); color: var(--accent-ink); font-weight: 600;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22); z-index: 6;
+}
+
+.btn {
+  min-height: 48px; padding: 0 20px; border-radius: 12px; border: 1px solid var(--line);
+  background: var(--surface); font-weight: 600;
+}
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.danger { background: var(--warn-soft); border-color: var(--warn); color: var(--warn); }
+.btn[disabled] { opacity: 0.6; cursor: default; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+
+.field { display: grid; gap: 6px; margin-top: 16px; }
+.field label, .field .lbl { font-weight: 600; font-size: 14px; }
+.field .hint { color: var(--muted); font-size: 13px; font-weight: 400; }
+.input, .area {
+  width: 100%; padding: 12px 14px; border-radius: 12px;
+  border: 1px solid var(--line); background: var(--surface); font-size: 16px;
+}
+.area { min-height: 130px; resize: vertical; }
+.tag-input { display: flex; gap: 8px; }
+.tag-input .input { flex: 1; min-width: 0; }
+
+.detail h2 { font-size: 26px; margin-bottom: 10px; }
+.section { margin-top: 24px; }
+.section h3 { font-size: 17px; margin-bottom: 8px; }
+.section ul, .section ol { margin: 0; padding-left: 22px; display: grid; gap: 8px; }
+.notes { white-space: pre-wrap; }
+
+.msg { margin: 12px 0; padding: 10px 14px; border-radius: 12px; font-size: 14px; }
+.msg.err { background: var(--warn-soft); color: var(--warn); }
+.msg.ok { background: var(--accent-soft); }
+
+.login { max-width: 420px; margin: 0 auto; padding: calc(env(safe-area-inset-top, 0px) + 56px) 20px 40px; }
+.login h1 { font-size: 34px; margin-bottom: 6px; }
+.login p { color: var(--muted); margin: 0 0 8px; }
+
+.sheet-back { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.45); z-index: 20; display: flex; align-items: flex-end; justify-content: center; }
+.sheet {
+  width: 100%; max-width: 640px; background: var(--surface); border-radius: 20px 20px 0 0;
+  padding: 18px 16px calc(env(safe-area-inset-bottom, 0px) + 18px); display: grid; gap: 10px;
+}
+.sheet .who { color: var(--muted); font-size: 14px; word-break: break-all; }
+.sheet .btn { width: 100%; text-align: left; }
+.loading { color: var(--muted); padding: 32px 0; text-align: center; }
+@media (prefers-reduced-motion: no-preference) {
+  .card, .chip, .btn { transition: background-color 0.15s; }
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<noscript>Ative o JavaScript para usar o app.</noscript>
+
+<script>
+"use strict";
+
+// ---------- Configuração ----------
+const SUPABASE_URL = "https://gjommlozqvxjvztgwuyv.supabase.co";
+const SUPABASE_KEY = "sb_publishable_PlBvp2W-HTP4fWs8WdL9PQ_r91a2oCT";
+const SESSION_KEY = "receitas.session";
+
+// ---------- Estado ----------
+const state = {
+  session: null,     // { access_token, refresh_token, expires_at, email }
+  recipes: [],
+  loaded: false,
+  loading: false,
+  query: "",
+  cat: null,
+  menu: false,
+  notice: null,      // { kind: "ok" | "err", text }
+  confirmDelete: false
+};
+const app = document.getElementById("app");
+
+// ---------- Utilidades ----------
+function el(tag, props, ...kids) {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(props || {})) {
+    if (v == null || v === false) continue;
+    if (k === "class") n.className = v;
+    else if (k === "text") n.textContent = v;
+    else if (k.startsWith("on")) n.addEventListener(k.slice(2), v);
+    else n.setAttribute(k, v === true ? "" : v);
+  }
+  for (const kid of kids.flat()) {
+    if (kid == null || kid === false) continue;
+    n.append(kid);
+  }
+  return n;
+}
+const norm = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const lines = (s) => String(s || "").split("\n").map((x) => x.trim()).filter(Boolean);
+function safeUrl(u) {
+  try {
+    const x = new URL(String(u).trim());
+    return x.protocol === "http:" || x.protocol === "https:" ? x.href : "";
+  } catch (e) { return ""; }
+}
+function icon(path) {
+  const s = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  s.setAttribute("viewBox", "0 0 24 24");
+  s.setAttribute("aria-hidden", "true");
+  const p = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  p.setAttribute("d", path);
+  s.append(p);
+  return s;
+}
+const ICON_MENU = "M4 7h16M4 12h16M4 17h16";
+const ICON_BACK = "M15 5l-7 7 7 7";
+
+function readSession() {
+  try { return JSON.parse(localStorage.getItem(SESSION_KEY)); } catch (e) { return null; }
+}
+function writeSession(s) {
+  try {
+    if (s) localStorage.setItem(SESSION_KEY, JSON.stringify(s));
+    else localStorage.removeItem(SESSION_KEY);
+  } catch (e) { /* sem armazenamento: a sessão vale só até fechar o app */ }
+}
+
+// ---------- Supabase (REST, sem biblioteca) ----------
+async function sbAuth(path, body) {
+  let r;
+  try {
+    r = await fetch(SUPABASE_URL + "/auth/v1/" + path, {
+      method: "POST",
+      headers: { apikey: SUPABASE_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+  } catch (e) {
+    throw new Error("Sem conexão com a internet.");
+  }
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) {
+    const err = new Error(j.error_description || j.msg || j.message || "Não foi possível entrar.");
+    err.auth = r.status === 400 || r.status === 401 || r.status === 403;
+    throw err;
+  }
+  return j;
+}
+function adoptSession(j, email) {
+  state.session = {
+    access_token: j.access_token,
+    refresh_token: j.refresh_token,
+    expires_at: j.expires_at || Math.floor(Date.now() / 1000) + (j.expires_in || 3600),
+    email: email || (j.user && j.user.email) || (state.session && state.session.email) || ""
+  };
+  writeSession(state.session);
+}
+async function token() {
+  const s = state.session;
+  if (!s) { const e = new Error("Sessão expirada."); e.auth = true; throw e; }
+  if (s.expires_at - 60 < Date.now() / 1000) {
+    const j = await sbAuth("token?grant_type=refresh_token", { refresh_token: s.refresh_token });
+    adoptSession(j);
+  }
+  return state.session.access_token;
+}
+async function db(method, query, body, prefer) {
+  const t = await token();
+  const headers = { apikey: SUPABASE_KEY, Authorization: "Bearer " + t };
+  if (body !== undefined) headers["Content-Type"] = "application/json";
+  if (prefer) headers.Prefer = prefer;
+  let r;
+  try {
+    r = await fetch(SUPABASE_URL + "/rest/v1/recipes" + query, {
+      method, headers, body: body !== undefined ? JSON.stringify(body) : undefined
+    });
+  } catch (e) {
+    throw new Error("Sem conexão com a internet.");
+  }
+  if (!r.ok) {
+    const j = await r.json().catch(() => ({}));
+    const err = new Error(j.message || "Erro " + r.status);
+    err.auth = r.status === 401;
+    throw err;
+  }
+  return r.json().catch(() => null);
+}
+
+function normalizeRow(r) {
+  return {
+    id: r.id,
+    title: r.title || "",
+    categories: Array.isArray(r.categories) ? r.categories : [],
+    video_url: r.video_url || "",
+    servings: r.servings || null,
+    ingredients: Array.isArray(r.ingredients) ? r.ingredients : [],
+    steps: Array.isArray(r.steps) ? r.steps : [],
+    notes: r.notes || "",
+    created_at: r.created_at
+  };
+}
+async function loadRecipes() {
+  state.loading = true;
+  render();
+  try {
+    const rows = await db("GET", "?select=*&order=created_at.desc");
+    state.recipes = (rows || []).map(normalizeRow);
+    state.loaded = true;
+  } catch (e) {
+    handleError(e);
+  }
+  state.loading = false;
+  render();
+}
+function handleError(e) {
+  if (e && e.auth) {
+    state.session = null; writeSession(null); state.recipes = []; state.loaded = false;
+    state.notice = { kind: "err", text: "Sua sessão expirou. Entre de novo." };
+  } else {
+    state.notice = { kind: "err", text: (e && e.message) || "Algo deu errado." };
+  }
+}
+
+// ---------- Navegação ----------
+function go(hash) {
+  state.notice = null; state.confirmDelete = false;
+  if (location.hash === hash || (hash === "" && !location.hash)) render();
+  else location.hash = hash;
+}
+window.addEventListener("hashchange", () => { state.confirmDelete = false; render(); window.scrollTo(0, 0); });
+
+// ---------- Peças de interface ----------
+function header(title, opts) {
+  opts = opts || {};
+  return el("header", { class: "top" },
+    el("div", { class: "top-in" },
+      opts.back ? el("button", { class: "icon-btn", "aria-label": "Voltar", onclick: () => go(opts.back) }, icon(ICON_BACK)) : null,
+      el("h1", { text: title }),
+      opts.menu ? el("button", { class: "icon-btn", "aria-label": "Menu", onclick: () => { state.menu = true; render(); } }, icon(ICON_MENU)) : null
+    )
+  );
+}
+function noticeBox() {
+  // O aviso aparece uma vez e some na próxima tela.
+  const n = state.notice;
+  state.notice = null;
+  return n ? el("div", { class: "msg " + n.kind, role: "status", text: n.text }) : null;
+}
+function allCategories() {
+  const m = new Map();
+  for (const r of state.recipes) for (const c of r.categories) m.set(c, (m.get(c) || 0) + 1);
+  return [...m.entries()].sort((a, b) => a[0].localeCompare(b[0], "pt-BR"));
+}
+
+// ---------- Tela: entrar ----------
+function renderLogin() {
+  let busy = false;
+  const email = el("input", { class: "input", id: "login-email", type: "email", autocomplete: "username", inputmode: "email", autocapitalize: "none", required: true, value: state.loginEmail || "" });
+  const pass = el("input", { class: "input", id: "login-pass", type: "password", autocomplete: "current-password", required: true });
+  const btn = el("button", { class: "btn primary", type: "submit", text: "Entrar" });
+  const form = el("form", {
+    onsubmit: async (ev) => {
+      ev.preventDefault();
+      if (busy) return;
+      busy = true; btn.disabled = true; btn.textContent = "Entrando…";
+      state.loginEmail = email.value.trim();
+      try {
+        const j = await sbAuth("token?grant_type=password", { email: email.value.trim(), password: pass.value });
+        adoptSession(j, email.value.trim());
+        state.notice = null;
+        await loadRecipes();
+        return;
+      } catch (e) {
+        state.notice = { kind: "err", text: /invalid login/i.test(e.message) ? "E-mail ou senha incorretos." : e.message };
+      }
+      busy = false;
+      render();
+    }
+  },
+    el("div", { class: "field" }, el("label", { for: "login-email", text: "E-mail" }), email),
+    el("div", { class: "field" }, el("label", { for: "login-pass", text: "Senha" }), pass),
+    noticeBox(),
+    el("div", { class: "row" }, btn)
+  );
+  app.replaceChildren(el("div", { class: "login" },
+    el("h1", { text: "Minhas Receitas" }),
+    el("p", { text: "Entre para ver suas receitas." }),
+    form
+  ));
+}
+
+// ---------- Tela: lista ----------
+function filtered() {
+  const q = norm(state.query);
+  return state.recipes.filter((r) => {
+    if (state.cat && !r.categories.includes(state.cat)) return false;
+    if (!q) return true;
+    return norm(r.title).includes(q) || r.categories.some((c) => norm(c).includes(q)) || r.ingredients.some((i) => norm(i).includes(q));
+  });
+}
+function cardFor(r) {
+  const bits = [];
+  if (r.ingredients.length) bits.push(r.ingredients.length + (r.ingredients.length === 1 ? " ingrediente" : " ingredientes"));
+  if (r.video_url) bits.push("com vídeo");
+  return el("li", null,
+    el("a", { class: "card", href: "#/r/" + r.id },
+      el("h2", { text: r.title }),
+      r.categories.length ? el("div", { class: "tags" }, r.categories.map((c) => el("span", { class: "tag", text: c }))) : null,
+      bits.length ? el("div", { class: "meta", text: bits.join(" · ") }) : null
+    )
+  );
+}
+function renderListBody(box) {
+  const items = filtered();
+  box.replaceChildren();
+  if (state.loading && !state.loaded) { box.append(el("div", { class: "loading", text: "Carregando receitas…" })); return; }
+  if (!state.recipes.length) {
+    box.append(el("div", { class: "empty" },
+      el("h2", { text: "Nenhuma receita ainda" }),
+      el("p", { text: "Toque em Nova receita para salvar a primeira, ou importe um backup pelo menu." })
+    ));
+    return;
+  }
+  if (!items.length) {
+    box.append(el("div", { class: "empty" }, el("h2", { text: "Nada encontrado" }), el("p", { text: "Tente outra palavra ou outra categoria." })));
+    return;
+  }
+  box.append(el("ul", { class: "list" }, items.map(cardFor)));
+}
+function renderList() {
+  const listBox = el("div");
+  const chipsBox = el("div", { class: "chips", role: "group", "aria-label": "Categorias" });
+  function drawChips() {
+    chipsBox.replaceChildren();
+    const cats = allCategories();
+    chipsBox.hidden = !cats.length;
+    chipsBox.append(el("button", { class: "chip", "aria-pressed": String(!state.cat), onclick: () => { state.cat = null; drawChips(); renderListBody(listBox); } }, "Todas"));
+    for (const [c, n] of cats) {
+      chipsBox.append(el("button", { class: "chip", "aria-pressed": String(state.cat === c), onclick: () => { state.cat = state.cat === c ? null : c; drawChips(); renderListBody(listBox); } }, c + " (" + n + ")"));
+    }
+  }
+  const search = el("input", {
+    class: "search", id: "search", type: "search", placeholder: "Buscar receita ou ingrediente",
+    value: state.query, "aria-label": "Buscar receitas",
+    oninput: (e) => { state.query = e.target.value; renderListBody(listBox); }
+  });
+  drawChips();
+  renderListBody(listBox);
+  app.replaceChildren(
+    header("Minhas Receitas", { menu: true }),
+    el("main", null, noticeBox(), search, chipsBox, listBox),
+    el("button", { class: "fab", onclick: () => go("#/nova") }, "+ Nova receita")
+  );
+}
+
+// ---------- Tela: detalhe ----------
+function renderDetail(id) {
+  const r = state.recipes.find((x) => x.id === id);
+  if (!r) { app.replaceChildren(header("Receita", { back: "#/" }), el("main", null, el("div", { class: "empty" }, el("h2", { text: "Receita não encontrada" })))); return; }
+  const url = safeUrl(r.video_url);
+  const actions = el("div", { class: "row" });
+  if (!state.confirmDelete) {
+    actions.append(
+      el("button", { class: "btn primary", onclick: () => go("#/editar/" + r.id) }, "Editar"),
+      el("button", { class: "btn danger", onclick: () => { state.confirmDelete = true; render(); } }, "Excluir")
+    );
+  } else {
+    actions.append(
+      el("button", { class: "btn danger", id: "confirm-del", onclick: async (ev) => {
+        ev.target.disabled = true;
+        try {
+          await db("DELETE", "?id=eq." + r.id);
+          state.recipes = state.recipes.filter((x) => x.id !== r.id);
+          state.notice = { kind: "ok", text: "Receita excluída." };
+          location.hash = "#/";
+        } catch (e) { handleError(e); render(); }
+      } }, "Confirmar exclusão"),
+      el("button", { class: "btn", onclick: () => { state.confirmDelete = false; render(); } }, "Cancelar")
+    );
+  }
+  app.replaceChildren(
+    header("Receita", { back: "#/" }),
+    el("main", { class: "detail" },
+      noticeBox(),
+      el("h2", { text: r.title }),
+      r.categories.length ? el("div", { class: "tags" }, r.categories.map((c) => el("span", { class: "tag", text: c }))) : null,
+      r.servings ? el("div", { class: "meta", text: "Rende " + r.servings + (r.servings === 1 ? " porção" : " porções") }) : null,
+      url ? el("div", { class: "row" }, el("a", { class: "btn", href: url, target: "_blank", rel: "noopener noreferrer", style: "display:inline-grid;place-items:center;text-decoration:none;color:inherit" }, "Abrir vídeo")) : null,
+      r.ingredients.length ? el("section", { class: "section" }, el("h3", { text: "Ingredientes" }), el("ul", null, r.ingredients.map((i) => el("li", { text: i })))) : null,
+      r.steps.length ? el("section", { class: "section" }, el("h3", { text: "Modo de preparo" }), el("ol", null, r.steps.map((s) => el("li", { text: s })))) : null,
+      r.notes ? el("section", { class: "section" }, el("h3", { text: "Anotações" }), el("div", { class: "notes", text: r.notes })) : null,
+      actions
+    )
+  );
+}
+
+// ---------- Tela: criar / editar ----------
+function renderForm(id) {
+  const r = id ? state.recipes.find((x) => x.id === id) : null;
+  if (id && !r) { go("#/"); return; }
+  const tags = r ? [...r.categories] : [];
+  let saving = false;
+
+  const title = el("input", { class: "input", id: "f-title", type: "text", value: r ? r.title : "", required: true, autocomplete: "off" });
+  const catInput = el("input", { class: "input", id: "f-cat", type: "text", placeholder: "Ex.: massas, marmita, sobremesa", autocomplete: "off", enterkeyhint: "done" });
+  const servings = el("input", { class: "input", id: "f-servings", type: "number", inputmode: "numeric", min: "1", value: r && r.servings ? String(r.servings) : "" });
+  const video = el("input", { class: "input", id: "f-video", type: "url", inputmode: "url", placeholder: "https://www.instagram.com/…", autocapitalize: "none", value: r ? r.video_url : "" });
+  const ingredients = el("textarea", { class: "area", id: "f-ing", placeholder: "2 xícaras de farinha\n3 ovos\n1 pitada de sal" }, r ? r.ingredients.join("\n") : "");
+  const steps = el("textarea", { class: "area", id: "f-steps", placeholder: "Misture os secos\nAdicione os ovos\nAsse por 30 minutos" }, r ? r.steps.join("\n") : "");
+  const notes = el("textarea", { class: "area", id: "f-notes", style: "min-height:90px" }, r ? r.notes : "");
+  const tagBox = el("div", { class: "tags" });
+  const suggestBox = el("div", { class: "tags" });
+  const saveBtn = el("button", { class: "btn primary", type: "submit", text: "Salvar" });
+  const status = el("div");
+
+  function addTag(raw) {
+    const t = String(raw || "").trim().replace(/\s+/g, " ");
+    if (!t) return;
+    if (!tags.some((x) => norm(x) === norm(t))) tags.push(t);
+    catInput.value = "";
+    drawTags();
+  }
+  function drawTags() {
+    tagBox.replaceChildren(...tags.map((t) => el("button", { type: "button", class: "chip on", "aria-label": "Remover categoria " + t, onclick: () => { tags.splice(tags.indexOf(t), 1); drawTags(); } }, t + "  ×")));
+    const sugg = allCategories().map(([c]) => c).filter((c) => !tags.some((x) => norm(x) === norm(c)));
+    suggestBox.replaceChildren(...sugg.map((c) => el("button", { type: "button", class: "chip ghost", onclick: () => addTag(c) }, "+ " + c)));
+  }
+  catInput.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); addTag(catInput.value); } });
+  drawTags();
+
+  const form = el("form", {
+    onsubmit: async (ev) => {
+      ev.preventDefault();
+      if (saving) return;
+      const name = title.value.trim();
+      if (!name) { status.replaceChildren(el("div", { class: "msg err", text: "Dê um nome para a receita." })); title.focus(); return; }
+      if (catInput.value.trim()) addTag(catInput.value);
+      const rawUrl = video.value.trim();
+      if (rawUrl && !safeUrl(rawUrl)) { status.replaceChildren(el("div", { class: "msg err", text: "O link do vídeo precisa começar com http:// ou https://." })); video.focus(); return; }
+      const sv = parseInt(servings.value, 10);
+      const payload = {
+        title: name,
+        categories: tags,
+        video_url: rawUrl || null,
+        servings: Number.isFinite(sv) && sv > 0 ? sv : null,
+        ingredients: lines(ingredients.value),
+        steps: lines(steps.value),
+        notes: notes.value.trim() || null
+      };
+      saving = true; saveBtn.disabled = true; saveBtn.textContent = "Salvando…"; status.replaceChildren();
+      try {
+        let saved;
+        if (r) {
+          const out = await db("PATCH", "?id=eq." + r.id, Object.assign({ updated_at: new Date().toISOString() }, payload), "return=representation");
+          saved = normalizeRow(out && out[0] ? out[0] : Object.assign({}, r, payload));
+          state.recipes = state.recipes.map((x) => (x.id === r.id ? saved : x));
+        } else {
+          const out = await db("POST", "", payload, "return=representation");
+          saved = normalizeRow(out[0]);
+          state.recipes.unshift(saved);
+        }
+        state.notice = { kind: "ok", text: "Receita salva." };
+        location.hash = "#/r/" + saved.id;
+      } catch (e) {
+        saving = false; saveBtn.disabled = false; saveBtn.textContent = "Salvar";
+        if (e.auth) { handleError(e); render(); return; }
+        status.replaceChildren(el("div", { class: "msg err", text: e.message }));
+      }
+    }
+  },
+    el("div", { class: "field" }, el("label", { for: "f-title", text: "Nome da receita" }), title),
+    el("div", { class: "field" },
+      el("label", { for: "f-cat" }, "Categorias ", el("span", { class: "hint", text: "(crie quantas quiser)" })),
+      tagBox,
+      el("div", { class: "tag-input" }, catInput, el("button", { type: "button", class: "btn", onclick: () => addTag(catInput.value) }, "Adicionar")),
+      suggestBox
+    ),
+    el("div", { class: "field" }, el("label", { for: "f-video" }, "Link do vídeo ", el("span", { class: "hint", text: "(opcional)" })), video),
+    el("div", { class: "field" }, el("label", { for: "f-servings" }, "Porções ", el("span", { class: "hint", text: "(opcional)" })), servings),
+    el("div", { class: "field" }, el("label", { for: "f-ing" }, "Ingredientes ", el("span", { class: "hint", text: "(um por linha)" })), ingredients),
+    el("div", { class: "field" }, el("label", { for: "f-steps" }, "Modo de preparo ", el("span", { class: "hint", text: "(um passo por linha)" })), steps),
+    el("div", { class: "field" }, el("label", { for: "f-notes" }, "Anotações ", el("span", { class: "hint", text: "(opcional)" })), notes),
+    status,
+    el("div", { class: "row" }, saveBtn, el("button", { type: "button", class: "btn", onclick: () => go(r ? "#/r/" + r.id : "#/") }, "Cancelar"))
+  );
+  app.replaceChildren(
+    header(r ? "Editar receita" : "Nova receita", { back: r ? "#/r/" + r.id : "#/" }),
+    el("main", null, form)
+  );
+}
+
+// ---------- Menu: backup e sair ----------
+function backupName() {
+  const d = new Date();
+  const p = (n) => String(n).padStart(2, "0");
+  return "receitas-backup-" + d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()) + ".json";
+}
+async function exportBackup() {
+  const data = { app: "minhas-receitas", version: 1, exported_at: new Date().toISOString(), recipes: state.recipes };
+  const text = JSON.stringify(data, null, 2);
+  const name = backupName();
+  const blob = new Blob([text], { type: "application/json" });
+  try {
+    const file = new File([blob], name, { type: "application/json" });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title: name });
+      state.notice = { kind: "ok", text: "Backup pronto. Salve em Arquivos para guardar no iCloud Drive." };
+      return;
+    }
+  } catch (e) {
+    if (e && e.name === "AbortError") return;
+  }
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  state.notice = { kind: "ok", text: "Backup baixado." };
+}
+function cleanImported(x) {
+  if (!x || typeof x !== "object" || !String(x.title || "").trim()) return null;
+  const arr = (v) => (Array.isArray(v) ? v.map((s) => String(s).trim()).filter(Boolean) : []);
+  const sv = parseInt(x.servings, 10);
+  const row = {
+    id: uuidRe.test(String(x.id || "")) ? String(x.id).toLowerCase() : crypto.randomUUID(),
+    title: String(x.title).trim(),
+    categories: arr(x.categories),
+    video_url: safeUrl(x.video_url) || null,
+    servings: Number.isFinite(sv) && sv > 0 ? sv : null,
+    ingredients: arr(x.ingredients),
+    steps: arr(x.steps),
+    notes: x.notes ? String(x.notes).trim() || null : null
+  };
+  const t = Date.parse(x.created_at);
+  row.created_at = Number.isFinite(t) ? new Date(t).toISOString() : new Date().toISOString();
+  return row;
+}
+async function importBackup(file) {
+  try {
+    const data = JSON.parse(await file.text());
+    const list = Array.isArray(data) ? data : data && data.recipes;
+    if (!Array.isArray(list)) throw new Error("Esse arquivo não parece um backup de receitas.");
+    const rows = list.map(cleanImported).filter(Boolean);
+    if (!rows.length) throw new Error("Nenhuma receita encontrada no arquivo.");
+    await db("POST", "?on_conflict=id", rows, "resolution=merge-duplicates,return=minimal");
+    await loadRecipes();
+    state.notice = { kind: "ok", text: rows.length + (rows.length === 1 ? " receita importada." : " receitas importadas.") };
+  } catch (e) {
+    if (e instanceof SyntaxError) state.notice = { kind: "err", text: "Não consegui ler o arquivo. Use um backup exportado por este app." };
+    else handleError(e);
+  }
+  render();
+}
+async function signOut() {
+  const t = state.session && state.session.access_token;
+  state.session = null; writeSession(null); state.recipes = []; state.loaded = false; state.menu = false; state.notice = null;
+  if (t) { fetch(SUPABASE_URL + "/auth/v1/logout", { method: "POST", headers: { apikey: SUPABASE_KEY, Authorization: "Bearer " + t } }).catch(() => {}); }
+  location.hash = "";
+  render();
+}
+function renderMenu() {
+  const pick = el("input", { type: "file", accept: "application/json,.json", hidden: true, id: "import-file",
+    onchange: async (e) => { const f = e.target.files && e.target.files[0]; state.menu = false; render(); if (f) await importBackup(f); } });
+  const back = el("div", { class: "sheet-back", onclick: (e) => { if (e.target === back) { state.menu = false; render(); } } },
+    el("div", { class: "sheet", role: "dialog", "aria-label": "Menu" },
+      el("div", { class: "who", text: state.session && state.session.email ? "Conectada como " + state.session.email : "" }),
+      el("button", { class: "btn", onclick: async () => { state.menu = false; await exportBackup(); render(); } }, "Exportar backup das receitas"),
+      el("button", { class: "btn", onclick: () => pick.click() }, "Importar backup"),
+      el("button", { class: "btn", onclick: signOut }, "Sair"),
+      el("button", { class: "btn", onclick: () => { state.menu = false; render(); } }, "Fechar"),
+      pick
+    )
+  );
+  document.body.append(back);
+}
+
+// ---------- Roteador ----------
+function render() {
+  document.querySelectorAll(".sheet-back").forEach((n) => n.remove());
+  if (!state.session) { renderLogin(); return; }
+  const parts = location.hash.replace(/^#\/?/, "").split("/");
+  if (parts[0] === "r" && parts[1]) renderDetail(parts[1]);
+  else if (parts[0] === "nova") renderForm(null);
+  else if (parts[0] === "editar" && parts[1]) renderForm(parts[1]);
+  else renderList();
+  if (state.menu) renderMenu();
+}
+
+// ---------- Início ----------
+(async function start() {
+  state.session = readSession();
+  if (state.session) { await loadRecipes(); } else { render(); }
+})();
+</script>
+</body>
+</html>
