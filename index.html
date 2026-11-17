@@ -48,6 +48,7 @@
   }
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html, body { margin: 0; }
 body {
   background: var(--bg);
@@ -161,6 +162,13 @@ main { max-width: 640px; margin: 0 auto; padding: 16px 16px calc(env(safe-area-i
 .sheet .who { color: var(--muted); font-size: 14px; word-break: break-all; }
 .sheet .btn { width: 100%; text-align: left; }
 .loading { color: var(--muted); padding: 32px 0; text-align: center; }
+.import { background: var(--accent-soft); border-radius: 16px; padding: 14px 16px 16px; margin-top: 4px; }
+.import h3 { font-size: 17px; }
+.import p { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+.import .tag-input { margin-top: 10px; }
+.import .field { margin-top: 12px; }
+.import .msg { margin-bottom: 0; background: var(--surface); }
+.import .msg.err { background: var(--warn-soft); }
 @media (prefers-reduced-motion: no-preference) {
   .card, .chip, .btn { transition: background-color 0.15s; }
 }
@@ -297,6 +305,26 @@ async function db(method, query, body, prefer) {
     throw err;
   }
   return r.json().catch(() => null);
+}
+
+// Chama a função "importar-receita" do Supabase, que lê a legenda e a organiza com IA.
+async function importFromLink(url, caption) {
+  const t = await token();
+  let r;
+  try {
+    r = await fetch(SUPABASE_URL + "/functions/v1/importar-receita", {
+      method: "POST",
+      headers: { apikey: SUPABASE_KEY, Authorization: "Bearer " + t, "Content-Type": "application/json" },
+      body: JSON.stringify(caption ? { url, caption } : { url })
+    });
+  } catch (e) {
+    throw new Error("Sem conexão com a internet.");
+  }
+  const j = await r.json().catch(() => ({}));
+  if (r.status === 404) throw new Error("A função de importação ainda não foi instalada no Supabase.");
+  if (r.status === 401) throw new Error("O Supabase recusou o pedido. Confira se a verificação de JWT está desligada nessa função.");
+  if (!r.ok) throw new Error(j.error || j.message || "Erro " + r.status);
+  return j;
 }
 
 function normalizeRow(r) {
@@ -526,6 +554,62 @@ function renderForm(id) {
   const saveBtn = el("button", { class: "btn primary", type: "submit", text: "Salvar" });
   const status = el("div");
 
+  // Importar de um link (só em receita nova)
+  const impUrl = el("input", { class: "input", id: "f-import-url", type: "url", inputmode: "url", autocapitalize: "none", placeholder: "Cole o link do Instagram ou TikTok" });
+  const impBtn = el("button", { type: "button", class: "btn primary", id: "f-import-btn", text: "Importar" });
+  const impStatus = el("div");
+  const impCaption = el("textarea", { class: "area", id: "f-import-caption", style: "min-height:100px", placeholder: "Cole aqui a legenda do post" });
+  const impCaptionBtn = el("button", { type: "button", class: "btn", id: "f-import-caption-btn", text: "Organizar legenda" });
+  const impCaptionBox = el("div", { class: "field", hidden: true },
+    el("label", { for: "f-import-caption" }, "Legenda ", el("span", { class: "hint", text: "(opcional, se o app não conseguir ler sozinho)" })),
+    impCaption, el("div", { class: "row", style: "margin-top:0" }, impCaptionBtn));
+  function impMsg(kind, text) { impStatus.replaceChildren(el("div", { class: "msg " + kind, role: "status", text })); }
+  function fillFromImport(rec, link) {
+    if (rec.title) title.value = rec.title;
+    if (rec.servings) servings.value = String(rec.servings);
+    if (rec.ingredients.length) ingredients.value = rec.ingredients.join("\n");
+    if (rec.steps.length) steps.value = rec.steps.join("\n");
+    if (link) video.value = link;
+  }
+  async function runImport(withCaption) {
+    const link = safeUrl(impUrl.value);
+    if (!link) { impMsg("err", "Cole um link que comece com http:// ou https://."); impUrl.focus(); return; }
+    const cap = withCaption ? impCaption.value.trim() : "";
+    if (withCaption && !cap) { impMsg("err", "Cole a legenda do post no campo acima."); impCaption.focus(); return; }
+    impBtn.disabled = true; impCaptionBtn.disabled = true;
+    const label = impBtn.textContent;
+    impBtn.textContent = "Importando…";
+    impMsg("ok", "Lendo a legenda e organizando a receita…");
+    try {
+      const out = await importFromLink(link, cap);
+      if (out.status === "ok") {
+        fillFromImport(out.recipe, link);
+        impMsg("ok", "Receita preenchida. Confira os campos abaixo, escolha as categorias e toque em Salvar.");
+        impCaptionBox.hidden = true;
+      } else if (out.status === "no_recipe") {
+        video.value = link;
+        impCaptionBox.hidden = false;
+        impMsg("ok", "A legenda não traz ingredientes nem modo de preparo. O link já está no campo de vídeo: preencha à mão ou cole outra legenda.");
+      } else {
+        video.value = link;
+        impCaptionBox.hidden = false;
+        impMsg("ok", "Não consegui ler a legenda desse link. Cole a legenda abaixo ou preencha à mão. O link já está no campo de vídeo.");
+      }
+    } catch (e) {
+      if (e.auth) { handleError(e); render(); return; }
+      impMsg("err", e.message);
+    }
+    impBtn.disabled = false; impCaptionBtn.disabled = false; impBtn.textContent = label;
+  }
+  impBtn.addEventListener("click", () => runImport(false));
+  impCaptionBtn.addEventListener("click", () => runImport(true));
+  const importBlock = el("section", { class: "import" },
+    el("h3", { text: "Importar de um link" }),
+    el("p", { text: "O app tenta ler a legenda e preencher ingredientes e modo de preparo." }),
+    el("div", { class: "tag-input" }, impUrl, impBtn),
+    impStatus, impCaptionBox
+  );
+
   function addTag(raw) {
     const t = String(raw || "").trim().replace(/\s+/g, " ");
     if (!t) return;
@@ -581,6 +665,7 @@ function renderForm(id) {
       }
     }
   },
+    r ? null : importBlock,
     el("div", { class: "field" }, el("label", { for: "f-title", text: "Nome da receita" }), title),
     el("div", { class: "field" },
       el("label", { for: "f-cat" }, "Categorias ", el("span", { class: "hint", text: "(crie quantas quiser)" })),
