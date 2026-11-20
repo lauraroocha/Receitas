@@ -561,7 +561,7 @@ function renderForm(id) {
   const impCaption = el("textarea", { class: "area", id: "f-import-caption", style: "min-height:100px", placeholder: "Cole aqui a legenda do post" });
   const impCaptionBtn = el("button", { type: "button", class: "btn", id: "f-import-caption-btn", text: "Organizar legenda" });
   const impCaptionBox = el("div", { class: "field", hidden: true },
-    el("label", { for: "f-import-caption" }, "Legenda ", el("span", { class: "hint", text: "(opcional, se o app não conseguir ler sozinho)" })),
+    el("label", { for: "f-import-caption" }, "Legenda ", el("span", { class: "hint", text: "(cole a inteira se o app não leu tudo)" })),
     impCaption, el("div", { class: "row", style: "margin-top:0" }, impCaptionBtn));
   function impMsg(kind, text) { impStatus.replaceChildren(el("div", { class: "msg " + kind, role: "status", text })); }
   function fillFromImport(rec, link) {
@@ -584,8 +584,14 @@ function renderForm(id) {
       const out = await importFromLink(link, cap);
       if (out.status === "ok") {
         fillFromImport(out.recipe, link);
-        impMsg("ok", "Receita preenchida. Confira os campos abaixo, escolha as categorias e toque em Salvar.");
-        impCaptionBox.hidden = true;
+        if (out.from_user) {
+          impMsg("ok", "Receita preenchida. Confira os campos abaixo, escolha as categorias e toque em Salvar.");
+          impCaptionBox.hidden = true;
+        } else {
+          const lido = out.chars ? " O app leu " + out.chars + " caracteres, e o texto lido termina em: “" + String(out.tail || "").replace(/\s+/g, " ").trim() + "”." : "";
+          impMsg("ok", "Receita preenchida com a parte da legenda que o app conseguiu ler." + lido + " Se estiver incompleta, cole a legenda inteira no campo abaixo e toque em Organizar legenda.");
+          impCaptionBox.hidden = false;
+        }
       } else if (out.status === "no_recipe") {
         video.value = link;
         impCaptionBox.hidden = false;
