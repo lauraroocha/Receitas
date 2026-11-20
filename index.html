@@ -3,15 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Minhas Receitas</title>
+<title>Pitada</title>
 <meta name="theme-color" content="#2c7a58">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Receitas">
+<meta name="apple-mobile-web-app-title" content="Pitada">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" href="icon-180.png">
-<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="pitada-180.png">
+<link rel="icon" type="image/png" href="pitada-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=DM+Sans:wght@400;500;600&display=swap">
@@ -424,7 +424,7 @@ function renderLogin() {
     el("div", { class: "row" }, btn)
   );
   app.replaceChildren(el("div", { class: "login" },
-    el("h1", { text: "Minhas Receitas" }),
+    el("h1", { text: "Pitada" }),
     el("p", { text: "Entre para ver suas receitas." }),
     form
   ));
@@ -488,7 +488,7 @@ function renderList() {
   drawChips();
   renderListBody(listBox);
   app.replaceChildren(
-    header("Minhas Receitas", { menu: true }),
+    header("Pitada", { menu: true }),
     el("main", null, noticeBox(), search, chipsBox, listBox),
     el("button", { class: "fab", onclick: () => go("#/nova") }, "+ Nova receita")
   );
@@ -697,10 +697,10 @@ function renderForm(id) {
 function backupName() {
   const d = new Date();
   const p = (n) => String(n).padStart(2, "0");
-  return "receitas-backup-" + d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()) + ".json";
+  return "pitada-backup-" + d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()) + ".json";
 }
 async function exportBackup() {
-  const data = { app: "minhas-receitas", version: 1, exported_at: new Date().toISOString(), recipes: state.recipes };
+  const data = { app: "pitada", version: 1, exported_at: new Date().toISOString(), recipes: state.recipes };
   const text = JSON.stringify(data, null, 2);
   const name = backupName();
   const blob = new Blob([text], { type: "application/json" });
